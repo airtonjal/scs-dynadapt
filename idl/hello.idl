@@ -1,0 +1,16 @@
+#ifndef HELLO
+#define HELLO
+
+#include "lifecycle.idl"
+
+module scs {
+  module demos {
+    module helloworld {
+      interface IHello {
+        //void sayHello(in string str);
+        void sayHello(in string str) raises (scs::core::lifecycle::HaltedComponent);
+      };
+    };
+  };
+};
+#endif

@@ -1,0 +1,56 @@
+#ifndef LIFECYCLE
+#define LIFECYCLE
+
+
+module scs {
+  module core {
+    module lifecycle {
+      /**
+       * @brief Enumeration used to define the possible component states
+       */
+      enum State { 
+        /**
+         * @brief Component is running and its services are up
+         */
+        RESUMED,
+        /**
+         * @brief Component is not available to respond requests. Requests are dropped
+         */
+        HALTED,
+        /**
+         * @brief Component is currently suspended, enqueues calls
+         */
+        SUSPENDED
+      };
+
+      /**
+       * @brief Exception used to indicate that the component cannot change its current execution state. "msg" parameter should contain info on why this exception was raised
+       */
+      exception CannotChangeState { string msg; };
+
+
+      /**
+       * @brief Interface to control component state
+       */
+      interface ILifeCycle {
+        /**
+         * @brief Acquires the current state the component is in
+         */
+        State getState();
+
+        /**
+         * @brief Attempts to change the component state
+         * @throws CannotChangeState Thrown if the component cannot change to the new state
+         */
+        boolean changeState(in State state) raises(CannotChangeState);
+      };
+
+      /**
+       * @brief Exception thrown when a non scs/CORBA request is made to a halted component
+       */
+      exception HaltedComponent { string msg; };
+    };
+  };
+};
+
+#endif

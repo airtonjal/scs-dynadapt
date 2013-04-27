@@ -1,0 +1,161 @@
+#ifndef ARCH
+#define ARCH
+
+module scs {
+  module core {
+    module arch {
+      typedef sequence<octet> OctetSeq;
+
+      /**
+       * @brief To indicate connections arities between components
+       */
+      enum Arity { ONE_TO_MANY, ONE_TO_ONE, MANY_TO_ONE };
+
+      /**
+       * @brief System execution machines config
+       */
+      struct Machine {
+        string host; long port; string ssh_user; string ssh_pass; string unique_name;
+      };
+      typedef sequence<Machine> Machines;
+
+      /**
+       * @brief Just like the FacetDescriptions, but without the implementation class yet
+       */
+      struct Service {
+        string name; string interface_name;
+        // The arity is ALWAYS from client to server
+        Arity arity;
+      };
+      typedef sequence<Service> Services;
+
+      /**
+       * @brief Component template to build architectural styles
+       */
+      struct ComponentRole {
+        Services provided; Services required; string unique_name;
+      };
+      typedef sequence<ComponentRole> Templates;
+
+      /**
+       * @brief Relationship template, to build architectural styles
+       */
+      struct Relationship {
+        ComponentRole client;
+        ComponentRole server;
+        Service service;
+        // Identifies the type of connection uniquely through the distributed system
+        string unique_name;
+      };
+      typedef sequence<Relationship> Relationships;
+      
+      struct Architecture {
+        Relationships relationships;
+        Templates components;
+      };
+
+      struct ComponentInstance {
+        ComponentRole role;
+        string unique_name;
+        Machine machine;
+        OctetSeq impl;
+      };
+      typedef sequence<ComponentInstance> ComponentInstances;
+
+      struct ConnectionInstance {
+        ComponentInstances clients;
+        ComponentInstances servers;
+        Relationship relationship;
+        string unique_name;
+      };
+      typedef sequence<ConnectionInstance> ConnectionInstances;
+
+      struct System {
+        ConnectionInstances connections;
+        ComponentInstances  components;
+      };
+
+      /**
+       * @brief Architectural Description Language of a system (composite component)
+       */
+      struct ADL {
+        string system_name;
+        Architecture architecture;
+        System system;
+      };
+
+      /**struct RelationshipChange {
+        Relationship before;
+        Relationship after;
+      };
+      typedef sequence<RelationshipChange> RelationshipChanges;*/
+
+      struct ArchitectureChange {
+        Templates newRoles;
+        Relationships removed;
+        Relationships added;
+      };
+
+      struct ComponentChange {
+        ComponentInstance previous;
+        OctetSeq newImpl;
+      };
+      typedef sequence<ComponentChange> ComponentChanges;
+
+      /**struct ConnectionChange {
+        ConnectionInstance oldConnection;
+        ConnectionInstance newConnection;
+      };
+      typedef sequence<ConnectionChange> ConnectionChanges;*/
+
+      struct SystemChange {
+        ComponentChanges componentChanges;
+        ComponentInstances newComponents;
+        ConnectionInstances removed;
+        ConnectionInstances added;
+      };
+
+      struct Adaptation {
+        ArchitectureChange architectureChange;
+        SystemChange systemChange;
+      };
+
+      exception InvalidADL{};
+      exception InvalidMachine{};
+      exception StartSystemFailed{};
+      exception AlreadyStarted{ string msg; };
+      exception NotStarted{};
+      exception UnavailableMachine{ string msg; };
+      exception MachineAlreadyExists{};
+      exception NoDeployer{};
+      exception InstallError{ string msg; };
+      exception RunError{ string msg; };
+      exception ShutdownError{ string msg; };
+      exception NonExistentInstance{};
+
+      interface IArchManager {
+        //boolean setSystemName(string system_name);
+        string   getSystemName();
+        boolean  startSystem(in ADL adl) raises (InvalidADL, StartSystemFailed, UnavailableMachine, AlreadyStarted, NoDeployer, InstallError, RunError);
+        boolean  addMachine(in Machine machine) raises (MachineAlreadyExists, UnavailableMachine, InvalidMachine);
+        boolean  shutdownSystem() raises (ShutdownError);
+        Machines getMachines();
+        boolean  shutdownDeployers() raises (UnavailableMachine, NotStarted);
+        boolean  isStarted();
+        boolean  stopSystem();
+
+
+        // Adapts the system
+        boolean replaceInstance(in string unique_name, in OctetSeq newImpl) raises (NonExistentInstance, RunError, NoDeployer); 
+        //boolean removeInstance(in string unique_name) raises (NonExistentInstance);
+        //boolean addInstance(in ComponentInstance instance) raises (NonExistentInstance);
+        void adapt( in Adaptation adaptation );
+
+        string toStringArch();
+      };
+    };
+  };
+};
+
+#endif
+

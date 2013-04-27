@@ -1,0 +1,31 @@
+#ifndef DEPLOYER
+#define DEPLOYER
+
+#include <scs.idl>
+#include <arch.idl>
+
+module scs {
+  module core {
+    module arch {
+      module deploy {
+        typedef sequence<octet> OctetSeq;
+        
+        exception AlreadyRegistered{ scs::core::arch::ComponentInstance component_instance; };
+        exception UnknownService{ string msg; scs::core::arch::Service service; };
+        exception NotInstalled{ string unique_name; };
+        exception NoImplementation{ string name; string interface_name; };
+
+        interface IDeployer {
+          boolean isAvailable();
+          void install(in scs::core::arch::ComponentInstance component_instance ) raises (AlreadyRegistered, UnknownService);
+          //void run (in string unique_name) raises (NotInstalled, NoImplementation);
+          scs::core::IComponent run (in string unique_name) raises (NotInstalled, NoImplementation);
+          scs::core::IComponent replaceInstance(in scs::core::arch::ComponentInstance oldInst, in scs::core::arch::ComponentInstance newInst);
+          void redeploy(in string unique_name, in OctetSeq impl) raises (NotInstalled, scs::core::arch::RunError);
+        };
+      };
+    };
+  };
+};
+
+#endif
